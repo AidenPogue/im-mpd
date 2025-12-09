@@ -30,8 +30,7 @@ void ImMPD::PlaybackButtonsPanel::Draw(MpdClientWrapper *client)
 {
     bool result = false;
 
-
-    if (ImGui::Begin(GetTitle(), nullptr, ImGuiWindowFlags_NoScrollbar))
+    if (ImGui::Begin(GetTitle(), nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         if (ImGui::BeginPopupContextWindow(GetTitle()))
         {

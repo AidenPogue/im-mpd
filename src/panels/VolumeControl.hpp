@@ -11,12 +11,15 @@ namespace ImMPD {
     {
     private:
         int editingValue = -1;
+        int currentValue = 0;
     public:
         const char * GetTitle() override;
 
         void Draw(MpdClientWrapper *client) override;
 
         ~VolumeControl() override;
+
+        void OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *data) override;
     };
 } // ImMPD
 

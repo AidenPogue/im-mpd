@@ -15,6 +15,8 @@
 #include "panels/SeekBar.hpp"
 #include <stdio.h>
 #include <iostream>
+
+#include "panels/VolumeControl.hpp"
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -161,8 +163,13 @@ int main(int, char**)
 #else
     double lastDrawTime = 0; 
 
-    size_t numPanels = 2;
-    ImMPD::PanelBase *panels[] = {new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar()};
+    size_t numPanels = 3;
+    ImMPD::PanelBase *panels[] = {new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar(), new ImMPD::VolumeControl()};
+
+    for (auto *panel : panels)
+    {
+        client->AddIdleListener([panel](MpdClientWrapper* client, MpdIdleEventData* data) {panel->OnIdleEvent(client, data);});
+    }
 
     while (!glfwWindowShouldClose(window))
 #endif

@@ -8,10 +8,13 @@
 // - Introduction, links and more at the top of imgui.cpp
 
 #include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 #include "MpdClientWrapper.hpp"
+#include "panels/PlaybackButtons.hpp"
+#include "panels/SeekBar.hpp"
 #include <stdio.h>
+#include <iostream>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -37,10 +40,12 @@ static void glfw_error_callback(int error, const char* description)
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+float fpsLimit = 1 / 30.0;
+
 // Main code
 int main(int, char**)
 {
-    MpdClientWrapper client = MpdClientWrapper("127.0.0.1", 6600);
+    MpdClientWrapper *client = new MpdClientWrapper("127.0.0.1", 6600);
 
     if (glfwPlatformSupported(GLFW_PLATFORM_WAYLAND)) {
         glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
@@ -147,9 +152,6 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    mpd_song *curSong = client.GetCurrentSong();
-    const char *songName = mpd_song_get_tag(curSong, MPD_TAG_TITLE, 0);
-
     // Main loop
 #ifdef __EMSCRIPTEN__
     // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
@@ -157,6 +159,11 @@ int main(int, char**)
     io.IniFilename = nullptr;
     EMSCRIPTEN_MAINLOOP_BEGIN
 #else
+    double lastDrawTime = 0; 
+
+    size_t numPanels = 2;
+    ImMPD::PanelBase *panels[] = {new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar()};
+
     while (!glfwWindowShouldClose(window))
 #endif
     {
@@ -171,6 +178,7 @@ int main(int, char**)
             ImGui_ImplGlfw_Sleep(10);
             continue;
         }
+
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
@@ -187,10 +195,30 @@ int main(int, char**)
         {
             static float f = 0.0f;
             static int counter = 0;
-
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
             
-            ImGui::Text(songName);
+            for (int i = 0; i < numPanels; i++)
+            {
+                ImMPD::PanelBase *panel = panels[i];
+
+                client->Poll();
+
+                ImGui::PushID(i);
+                panel->Draw(client);
+                ImGui::PopID();
+            }   
+
+            ImGui::Begin("List");
+            
+            if (ImGui::TreeNode("Root"))
+            {
+                
+                if (ImGui::TreeNode("Yo"))
+                {
+                    ImGui::TreePop();
+                }
+
+                ImGui::TreePop();
+            }
 
             ImGui::End();
         }
@@ -216,6 +244,7 @@ int main(int, char**)
         }
 
         glfwSwapBuffers(window);
+        lastDrawTime = glfwGetTime();
     }
 #ifdef __EMSCRIPTEN__
     EMSCRIPTEN_MAINLOOP_END;

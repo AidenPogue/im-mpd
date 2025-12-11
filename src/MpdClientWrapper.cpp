@@ -1,18 +1,34 @@
 #include "MpdClientWrapper.hpp"
+
+#include <assert.h>
 #include <iostream>
 #include <poll.h>
 #include <mpd/status.h>
-#include <GLFW/glfw3.h>
+
+MpdClientWrapper::MpdClientWrapper(const char* hostname, uint port)
+{
+    this->hostname = hostname;
+    this->port = port;
+
+    listeners = std::list<std::function<void(MpdClientWrapper*, MpdIdleEventData*)>>(8);
+
+    Connect();
+
+}
+
+MpdClientWrapper::~MpdClientWrapper()
+{
+}
 
 void MpdClientWrapper::ThrowIfNotConnected()
 {
-    if (connection == nullptr)
+    if (!GetIsConnected())
     {
         throw 67;
     }
 }
 
-void MpdClientWrapper::HandleEvents(mpd_idle idle)
+void MpdClientWrapper::HandleIdle(mpd_idle idle)
 {
     //Reused for all events.
     static MpdIdleEventData eventData;
@@ -35,13 +51,7 @@ void MpdClientWrapper::HandleEvents(mpd_idle idle)
     // playInfo.startedAtElapsedSeconds = mpd_status_get_elapsed_ms(status) / 1000.0f;
     // playInfo.startedAtGlfwTime = glfwGetTime();
 
-    mpd_status_free(eventData.currentStatus);
-    mpd_song_free(eventData.currentSong);
-
-    if (idle & MPD_IDLE_PLAYER)
-    {
-
-    }
+    eventData.Free();
 }
 
 int MpdClientWrapper::Connect()
@@ -49,103 +59,25 @@ int MpdClientWrapper::Connect()
     if (connection == nullptr)
     {
         connection = mpd_connection_new(hostname, port, 0);
-        idleConnection = mpd_connection_new(hostname, port, 0);
-        mpd_send_idle(idleConnection);
+        if (mpd_connection_get_error(connection) != MPD_ERROR_SUCCESS)
+        {
+            std::cerr << "Connection error: " << mpd_connection_get_error_message(connection) << std::endl;
+            mpd_connection_free(connection);
+            return mpd_connection_get_error(connection);
+        }
+        mpd_send_idle(connection);
         return 0;
     }
 
     return 1;
 }
 
-MpdClientWrapper::MpdClientWrapper(const char* hostname, uint port)
-{
-    this->hostname = hostname;
-    this->port = port;
 
-    listeners = std::list<std::function<void(MpdClientWrapper*, MpdIdleEventData*)>>(8);
-
-    Connect();
-
-}
-
-MpdClientWrapper::~MpdClientWrapper()
-{
-}
-
-void MpdClientWrapper::AddIdleListener(std::function<void(MpdClientWrapper *, MpdIdleEventData *)> listener)
-{
-    listeners.push_back(listener);
-}
-
-mpd_song *MpdClientWrapper::GetCurrentSong()
-{
-    ThrowIfNotConnected();
-    return mpd_run_current_song(connection);
-}
-
-bool MpdClientWrapper::Play()
-{
-    ThrowIfNotConnected();
-    return mpd_run_play(connection);
-}
-
-bool MpdClientWrapper::Pause()
-{
-    ThrowIfNotConnected();
-    return mpd_run_pause(connection, true);
-}
-
-bool MpdClientWrapper::Toggle()
-{
-    ThrowIfNotConnected();
-    auto status = GetStatus();
-    auto state = mpd_status_get_state(status);
-    mpd_status_free(status);
-
-    if (state == MPD_STATE_STOP || state == MPD_STATE_UNKNOWN)
-    {
-        return Play();
-    }
-    else
-    {
-        return mpd_run_pause(connection, state != MPD_STATE_PAUSE);
-    }
-}
-
-bool MpdClientWrapper::Next()
-{
-    ThrowIfNotConnected();
-    return mpd_run_next(connection);
-}
-
-bool MpdClientWrapper::Prev()
-{
-    ThrowIfNotConnected();
-    return mpd_run_previous(connection);
-}
-
-bool MpdClientWrapper::SeekToSeconds(float s, bool relative)
-{
-    ThrowIfNotConnected();
-    return mpd_run_seek_current(connection, s, relative);
-}
-
-bool MpdClientWrapper::SetVolume(int volume)
-{
-    ThrowIfNotConnected();
-    return mpd_run_set_volume(connection, volume);
-}
-
-mpd_status *MpdClientWrapper::GetStatus()
-{
-    return mpd_run_status(connection);
-}
-
-void MpdClientWrapper::Poll()
+bool MpdClientWrapper::ReceiveIdle()
 {
     ThrowIfNotConnected();
     struct pollfd pfd;
-    pfd.fd = mpd_connection_get_fd(idleConnection);
+    pfd.fd = mpd_connection_get_fd(connection);
     pfd.events = POLLIN;   // data available to read
     pfd.revents = 0;
 
@@ -153,9 +85,174 @@ void MpdClientWrapper::Poll()
 
     if (ret > 0 && (pfd.revents & (POLLIN | POLLERR | POLLHUP)))
     {
-        mpd_idle idle = mpd_recv_idle(idleConnection, false);
+        mpd_idle idle = mpd_recv_idle(connection, false);
         std::cout << mpd_idle_name(idle) << std::endl;
-        HandleEvents(idle);
-        mpd_send_idle(idleConnection);
+        HandleIdle(idle);
+        return false;
+    }
+    return !noIdleMode;
+}
+
+bool MpdClientWrapper::GetIsConnected()
+{
+    bool null = connection == nullptr;
+    if (!null && mpd_connection_get_error(connection) != MPD_ERROR_SUCCESS)
+    {
+        std::cout << "Connection error: " << mpd_connection_get_error_message(connection) << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+void MpdClientWrapper::AddIdleListener(std::function<void(MpdClientWrapper *, MpdIdleEventData *)> listener)
+{
+    listeners.push_back(listener);
+}
+
+void MpdClientWrapper::BeginNoIdle()
+{
+    assert(!noIdleMode);
+    if (ReceiveIdle())
+    {
+        mpd_run_noidle(connection);
+    }
+    noIdleMode = true;
+}
+
+void MpdClientWrapper::EndNoIdle()
+{
+    assert(noIdleMode);
+    if (!ReceiveIdle())
+    {
+        mpd_send_idle(connection);
+    }
+    noIdleMode = false;
+}
+
+mpd_song *MpdClientWrapper::GetCurrentSong()
+{
+    ThrowIfNotConnected();
+
+    auto song= mpd_run_current_song(connection);
+    
+    return song;
+}
+
+bool MpdClientWrapper::GetCurrentQueue(std::vector<mpd_song *> &songList)
+{
+    auto res = mpd_send_list_queue_meta(connection);
+    if (!res)
+    {
+        return false;
+    }
+    return ReceiveSongList(songList);
+}
+
+bool MpdClientWrapper::Play()
+{
+    ThrowIfNotConnected();
+
+    auto res= mpd_run_play(connection);
+    
+    return res;
+}
+
+bool MpdClientWrapper::Pause()
+{
+    ThrowIfNotConnected();
+
+    auto res= mpd_run_pause(connection, true);
+    
+    return res;
+}
+
+bool MpdClientWrapper::Toggle()
+{
+    ThrowIfNotConnected();
+
+
+
+    auto status = GetStatus();
+    auto state = mpd_status_get_state(status);
+    mpd_status_free(status);
+
+    bool res = false;
+
+    if (state == MPD_STATE_STOP || state == MPD_STATE_UNKNOWN)
+    {
+        res = mpd_run_play(connection);
+    }
+    else
+    {
+        res = mpd_run_pause(connection, state != MPD_STATE_PAUSE);
+    }
+
+    
+    return res;
+}
+
+bool MpdClientWrapper::Next()
+{
+    ThrowIfNotConnected();
+
+    auto res= mpd_run_next(connection);
+    
+    return res;
+}
+
+bool MpdClientWrapper::Prev()
+{
+    ThrowIfNotConnected();
+
+    auto res= mpd_run_previous(connection);
+    
+    return res;
+}
+
+bool MpdClientWrapper::SeekToSeconds(float s, bool relative)
+{
+    ThrowIfNotConnected();
+
+    auto res= mpd_run_seek_current(connection, s, relative);
+    
+    return res;
+}
+
+bool MpdClientWrapper::SetVolume(int volume)
+{
+    ThrowIfNotConnected();
+
+    auto res= mpd_run_set_volume(connection, volume);
+    
+    return res;
+}
+
+mpd_status *MpdClientWrapper::GetStatus()
+{
+    ThrowIfNotConnected();
+
+    auto status = mpd_run_status(connection);
+    
+    return status;
+}
+
+bool MpdClientWrapper::ReceiveSongList(std::vector<mpd_song *> &songList)
+{
+    auto curSong = mpd_recv_song(connection);
+    while (curSong != nullptr)
+    {
+        songList.push_back(curSong);
+        curSong = mpd_recv_song(connection);
+    }
+    return true;
+}
+
+void MpdClientWrapper::Poll()
+{
+    assert(!noIdleMode);
+    if (!ReceiveIdle())
+    {
+        mpd_send_idle(connection);
     }
 }

@@ -37,21 +37,26 @@ void ImMPD::PlaybackButtonsPanel::Draw(MpdClientWrapper *client)
             // ImGui::Selectable("Test", &test);
             ImGui::EndPopup();
         }
-        
 
         if (ImGui::Button("<<")) {
+            client->BeginNoIdle();
             result = client->Prev();
+            client->EndNoIdle();
         }
 
         ImGui::SameLine();
         
         if (ImGui::Button(">||")) {
+            client->BeginNoIdle();
             result = client->Toggle();
+            client->EndNoIdle();
         }
         ImGui::SameLine();
 
         if (ImGui::Button(">>")) {
+            client->BeginNoIdle();
             result = client->Next();
+            client->EndNoIdle();
         }
         
     }

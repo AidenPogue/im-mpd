@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.23)
 
 project(IM-MPD)
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -ggdb")
+
 add_executable(im-mpd)
 
 add_subdirectory(src)

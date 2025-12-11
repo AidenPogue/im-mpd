@@ -7,6 +7,16 @@
 #include "imgui.h"
 
 namespace ImMPD {
+    void VolumeControl::SetState(mpd_status *status)
+    {
+        if (status == nullptr)
+        {
+            return;
+        }
+
+        currentValue = mpd_status_get_volume(status);
+    }
+
     const char * VolumeControl::GetTitle()
     {
         return "Volume Control";
@@ -20,7 +30,9 @@ namespace ImMPD {
 
             if (ImGui::SliderInt("Vol:", &currentValue, 0, 100) && currentValue != oldValue)
             {
+                client->BeginNoIdle();
                 client->SetVolume(currentValue);
+                client->EndNoIdle();
             }
         }
 
@@ -31,11 +43,25 @@ namespace ImMPD {
     {
     }
 
+
+
     void VolumeControl::OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *data)
     {
         if (data->idleEvent == MPD_IDLE_MIXER)
         {
-            currentValue = mpd_status_get_volume(data->currentStatus);
+            SetState(data->currentStatus);
         }
+    }
+
+    void VolumeControl::InitState(MpdClientWrapper *client)
+    {
+        client->BeginNoIdle();
+        auto status = client->GetStatus();
+        SetState(status);
+        if (status != nullptr)
+        {
+            mpd_status_free(status);
+        }
+        client->EndNoIdle();
     }
 } // ImMPD

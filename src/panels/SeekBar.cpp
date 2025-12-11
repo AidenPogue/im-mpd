@@ -5,18 +5,6 @@
 
 void ImMPD::SeekBar::Draw(MpdClientWrapper *client)
 {
-    //Set state on the first draw.
-    if (!initialized)
-    {
-        auto song = client->GetCurrentSong();
-        auto status = client->GetStatus();
-        SetState(song, status);
-        mpd_song_free(song);
-        mpd_status_free(status);
-
-        initialized = true;
-    }
-
     if(ImGui::Begin(GetTitle(), nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         bool disabled = currentState == MPD_STATE_STOP || currentState == MPD_STATE_UNKNOWN;
@@ -38,7 +26,10 @@ void ImMPD::SeekBar::Draw(MpdClientWrapper *client)
         if (ImGui::IsItemDeactivatedAfterEdit())
         {
             printf("Seeking to %f\n", currentSeek);
+
+            client->BeginNoIdle();
             client->SeekToSeconds(currentSeek, false);
+            client->EndNoIdle();
         }
 
         if (!ImGui::IsItemActive())
@@ -59,14 +50,38 @@ const char *ImMPD::SeekBar::GetTitle()
 
 void ImMPD::SeekBar::OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *data)
 {
+    puts("Seekbar idle");
     if ((data->idleEvent & MPD_IDLE_PLAYER) != 0)
     {
         SetState(data->currentSong, data->currentStatus);
     }
 }
 
+void ImMPD::SeekBar::InitState(MpdClientWrapper *client)
+{
+    client->BeginNoIdle();
+    auto song = client->GetCurrentSong();
+    auto status = client->GetStatus();
+    SetState(song, status);
+
+    if (song != nullptr)
+    {
+        mpd_song_free(song);
+    }
+    if (status != nullptr)
+    {
+        mpd_status_free(status);
+    }
+    client->EndNoIdle();
+}
+
 void ImMPD::SeekBar::SetState(mpd_song *song, mpd_status *status)
 {
+    if (song == nullptr || status == nullptr)
+    {
+        return;
+    }
+
     currentState = mpd_status_get_state(status);
     if (currentState == MPD_STATE_PLAY || currentState == MPD_STATE_PAUSE)
     {

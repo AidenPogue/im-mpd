@@ -16,8 +16,6 @@ namespace ImMPD
 
         mpd_state currentState = MPD_STATE_STOP;
 
-        bool initialized = false;
-
         void SetState(mpd_song *song, mpd_status *status);
     public:
         SeekBar();
@@ -26,5 +24,7 @@ namespace ImMPD
         const char *GetTitle() override;
 
         void OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *data) override;
+
+        void InitState(MpdClientWrapper *client) override;
     };
 }

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <iostream>
 
+#include "panels/PlaylistView.hpp"
 #include "panels/VolumeControl.hpp"
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -32,10 +33,6 @@
 #pragma comment(lib, "legacy_stdio_definitions")
 #endif
 
-// This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
-#ifdef __EMSCRIPTEN__
-#include "../libs/emscripten/emscripten_mainloop_stub.h"
-#endif
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -49,9 +46,11 @@ int main(int, char**)
 {
     MpdClientWrapper *client = new MpdClientWrapper("127.0.0.1", 6600);
 
+#ifdef GLFW_PLATFORM_WAYLAND
     if (glfwPlatformSupported(GLFW_PLATFORM_WAYLAND)) {
         glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
     }
+#endif
 
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -154,25 +153,22 @@ int main(int, char**)
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    // Main loop
-#ifdef __EMSCRIPTEN__
-    // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the imgui.ini file.
-    // You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
-    io.IniFilename = nullptr;
-    EMSCRIPTEN_MAINLOOP_BEGIN
-#else
     double lastDrawTime = 0; 
 
-    size_t numPanels = 3;
-    ImMPD::PanelBase *panels[] = {new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar(), new ImMPD::VolumeControl()};
+    size_t numPanels = 4;
+    ImMPD::PanelBase *panels[] = {new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar(), new ImMPD::VolumeControl(), new ImMPD::PlaylistView()};
 
-    for (auto *panel : panels)
+    if (client->GetIsConnected())
     {
-        client->AddIdleListener([panel](MpdClientWrapper* client, MpdIdleEventData* data) {panel->OnIdleEvent(client, data);});
+        for (auto *panel : panels)
+        {
+            client->AddIdleListener([panel](MpdClientWrapper* client, MpdIdleEventData* data) {panel->OnIdleEvent(client, data);});
+            panel->InitState(client);
+        }
     }
 
+
     while (!glfwWindowShouldClose(window))
-#endif
     {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
@@ -253,9 +249,6 @@ int main(int, char**)
         glfwSwapBuffers(window);
         lastDrawTime = glfwGetTime();
     }
-#ifdef __EMSCRIPTEN__
-    EMSCRIPTEN_MAINLOOP_END;
-#endif
 
     // Cleanup
     ImGui_ImplOpenGL3_Shutdown();

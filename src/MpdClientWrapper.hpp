@@ -17,11 +17,25 @@ struct MpdPlayInfo
 /**
  * Contains the idle event id and some shared data for convinence.
  */
-struct MpdIdleEventData
+//MOVE INTO OWN FILE!
+class MpdIdleEventData
 {
+public:
     mpd_idle idleEvent;
     mpd_song *currentSong;
     mpd_status *currentStatus;
+
+    void Free()
+    {
+        if (currentStatus != nullptr)
+        {
+            mpd_status_free(currentStatus);
+        }
+        if (currentSong != nullptr)
+        {
+            mpd_song_free(currentSong);
+        }
+    }
 };
 
 class MpdClientWrapper
@@ -30,23 +44,39 @@ private:
     const char *hostname;
     uint port;
 
+    bool noIdleMode;
+
     mpd_connection *connection;
-    mpd_connection *idleConnection;
 
     std::list<std::function<void(MpdClientWrapper*, MpdIdleEventData*)>> listeners;
 
     void ThrowIfNotConnected();
-    void HandleEvents(mpd_idle idle);
+    void HandleIdle(mpd_idle idle);
     int Connect();
+    bool ReceiveIdle();
+    bool ReceiveSongList(std::vector<mpd_song *> &songList);
 
 public:
     MpdClientWrapper(const char *hostname, uint port);
     ~MpdClientWrapper();
 
+    bool GetIsConnected();
     void AddIdleListener(std::function<void(MpdClientWrapper*, MpdIdleEventData*)> listener);
 
+
+    /**
+     * Sends the noidle command to MPD. Call this before sending commands *outside of an event handler*
+     */
+    void BeginNoIdle();
+    void EndNoIdle();
+
     mpd_song *GetCurrentSong();
+    bool GetCurrentQueue(std::vector<mpd_song *> &songList);
     mpd_status *GetStatus();
+
+
+    //Db
+
     
     //Playback
     bool Play();

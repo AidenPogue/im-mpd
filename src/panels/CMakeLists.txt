@@ -7,5 +7,7 @@ target_sources(im-mpd
         PanelBase.cpp
         VolumeControl.cpp
         MediaLibraryTree.cpp
-        PlaylistView.cpp
+        QueueView.cpp
+        SongTableColumn.cpp
+        Container.cpp
 )

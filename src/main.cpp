@@ -16,7 +16,8 @@
 #include <stdio.h>
 #include <iostream>
 
-#include "panels/PlaylistView.hpp"
+#include "panels/Container.hpp"
+#include "panels/QueueView.hpp"
 #include "panels/VolumeControl.hpp"
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -131,17 +132,13 @@ int main(int, char**)
 #endif
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    // Load Fonts
-    // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-    // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-    // - If the file cannot be loaded, the function will return a nullptr. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-    // - Use '#define IMGUI_ENABLE_FREETYPE' in your imconfig file to use Freetype for higher quality font rendering.
-    // - Read 'docs/FONTS.md' for more instructions and details. If you like the default font but want it to scale better, consider using the 'ProggyVector' from the same author!
-    // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    // - Our Emscripten build process allows embedding fonts to be accessible at runtime from the "fonts/" folder. See Makefile.emscripten for details.
-    //style.FontSizeBase = 20.0f;
-    //io.Fonts->AddFontDefault();
-    //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf");
+    //TESTING!
+    style.FontSizeBase = 16.0f;
+    io.Fonts->AddFontFromFileTTF("/usr/share/fonts/adwaita-sans-fonts/AdwaitaSans-Regular.ttf");
+    ImFontConfig config;
+    config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF("/usr/share/fonts/google-droid-sans-fonts/DroidSansJapanese.ttf", 0, &config);
+
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf");
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf");
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf");
@@ -155,8 +152,8 @@ int main(int, char**)
 
     double lastDrawTime = 0; 
 
-    size_t numPanels = 4;
-    ImMPD::PanelBase *panels[] = {new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar(), new ImMPD::VolumeControl(), new ImMPD::PlaylistView()};
+    size_t numPanels = 5;
+    ImMPD::PanelBase *panels[] = {new ImMPD::Container(), new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar(), new ImMPD::VolumeControl(), new ImMPD::QueueView()};
 
     if (client->GetIsConnected())
     {

@@ -38,7 +38,7 @@ void ImMPD::PlaybackButtonsPanel::Draw(MpdClientWrapper *client)
             ImGui::EndPopup();
         }
 
-        if (ImGui::Button("<<")) {
+        if (ImGui::Button("|<<")) {
             client->BeginNoIdle();
             result = client->Prev();
             client->EndNoIdle();
@@ -53,7 +53,7 @@ void ImMPD::PlaybackButtonsPanel::Draw(MpdClientWrapper *client)
         }
         ImGui::SameLine();
 
-        if (ImGui::Button(">>")) {
+        if (ImGui::Button(">>|")) {
             client->BeginNoIdle();
             result = client->Next();
             client->EndNoIdle();

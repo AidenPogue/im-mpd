@@ -46,7 +46,7 @@ private:
 
     bool noIdleMode;
 
-    mpd_connection *connection;
+    mpd_connection *connection = nullptr;
 
     std::list<std::function<void(MpdClientWrapper*, MpdIdleEventData*)>> listeners;
 
@@ -57,7 +57,7 @@ private:
     bool ReceiveSongList(std::vector<mpd_song *> &songList);
 
 public:
-    MpdClientWrapper(const char *hostname, uint port);
+    MpdClientWrapper(const char *hostname, uint port, unsigned binaryLimit = 8192);
     ~MpdClientWrapper();
 
     bool GetIsConnected();
@@ -71,15 +71,17 @@ public:
     void EndNoIdle();
 
     mpd_song *GetCurrentSong();
-    bool GetCurrentQueue(std::vector<mpd_song *> &songList);
+    bool GetQueue(std::vector<mpd_song *> &songList);
     mpd_status *GetStatus();
-
+    //bool StartAlbumArt(const char *uri, )
 
     //Db
 
     
     //Playback
-    bool Play();
+
+    bool PlayCurrent();
+    bool PlayId(unsigned id);
     bool Pause();
     bool Toggle();
     bool Next();
@@ -87,6 +89,7 @@ public:
     bool SeekToSeconds(float s, bool relative);
 
     bool SetVolume(int volume);
+    bool ChangeVolume(int by);
 
    
 

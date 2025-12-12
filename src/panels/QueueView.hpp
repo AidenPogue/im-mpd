@@ -5,16 +5,23 @@
 #ifndef IM_MPD_PLAYLISTVIEW_H
 #define IM_MPD_PLAYLISTVIEW_H
 #include "PanelBase.hpp"
+#include "SongTableColumn.hpp"
 
 namespace ImMPD
 {
-    class PlaylistView : public PanelBase
+    class QueueView : public PanelBase
     {
     private:
-        std::vector<mpd_song *> currentPlaylist;
+        std::vector<mpd_song *> currentQueue;
+        std::vector<std::vector<std::string>> cellValueCache;
+        unsigned currentId;
 
-        void GetPlaylist(MpdClientWrapper *client);
+        void UpdateQueue(MpdClientWrapper *client);
+
+        static void CacheRowIfNeeded(mpd_song *song, const std::vector<SongTableColumn> &columns, std::vector<std::string> &rowCache);
     public:
+        QueueView();
+
         const char * GetTitle() override;
 
         void Draw(MpdClientWrapper *client) override;
@@ -22,8 +29,6 @@ namespace ImMPD
         void OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *data) override;
 
         void InitState(MpdClientWrapper *client) override;
-
-        PlaylistView();
     };
 } // ImMPD
 

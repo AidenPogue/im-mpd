@@ -28,7 +28,15 @@ namespace ImMPD {
         {
             auto oldValue = currentValue;
 
-            if (ImGui::SliderInt("Vol:", &currentValue, 0, 100) && currentValue != oldValue)
+            auto sliderEdited = ImGui::SliderInt("Vol", &currentValue, 0, 100, "%d%%");
+            auto mouseWheel = ImGui::GetIO().MouseWheel;
+            if (!sliderEdited && ImGui::IsItemHovered() && mouseWheel != 0)
+            {
+                client->BeginNoIdle();
+                client->ChangeVolume(2 * (int)mouseWheel);
+                client->EndNoIdle();
+            }
+            else if (currentValue != oldValue)
             {
                 client->BeginNoIdle();
                 client->SetVolume(currentValue);

@@ -5,7 +5,12 @@
 #include <poll.h>
 #include <mpd/status.h>
 
-MpdClientWrapper::MpdClientWrapper(const char* hostname, uint port)
+#include "Utils.hpp"
+
+static uint8_t *binaryChunkBuffer;
+static size_t binaryChunkBufferSize = 0;
+
+MpdClientWrapper::MpdClientWrapper(const char* hostname, uint port, unsigned binaryLimit)
 {
     this->hostname = hostname;
     this->port = port;
@@ -14,6 +19,13 @@ MpdClientWrapper::MpdClientWrapper(const char* hostname, uint port)
 
     Connect();
 
+    /*
+    if (GetIsConnected())
+    {
+        mpd_run_binarylimit(connection, binaryLimit);
+        ImMPD::Utils::CreateOrResizeBinaryBuffer(binaryChunkBuffer, binaryChunkBufferSize, binaryLimit);
+    }
+    */
 }
 
 MpdClientWrapper::~MpdClientWrapper()
@@ -139,7 +151,7 @@ mpd_song *MpdClientWrapper::GetCurrentSong()
     return song;
 }
 
-bool MpdClientWrapper::GetCurrentQueue(std::vector<mpd_song *> &songList)
+bool MpdClientWrapper::GetQueue(std::vector<mpd_song *> &songList)
 {
     auto res = mpd_send_list_queue_meta(connection);
     if (!res)
@@ -149,12 +161,19 @@ bool MpdClientWrapper::GetCurrentQueue(std::vector<mpd_song *> &songList)
     return ReceiveSongList(songList);
 }
 
-bool MpdClientWrapper::Play()
+bool MpdClientWrapper::PlayCurrent()
 {
     ThrowIfNotConnected();
 
     auto res= mpd_run_play(connection);
     
+    return res;
+}
+
+bool MpdClientWrapper::PlayId(unsigned id)
+{
+    ThrowIfNotConnected();
+    auto res = mpd_run_play_id(connection, id);
     return res;
 }
 
@@ -226,6 +245,12 @@ bool MpdClientWrapper::SetVolume(int volume)
     auto res= mpd_run_set_volume(connection, volume);
     
     return res;
+}
+
+bool MpdClientWrapper::ChangeVolume(int by)
+{
+    ThrowIfNotConnected();
+    return mpd_run_change_volume(connection, by);
 }
 
 mpd_status *MpdClientWrapper::GetStatus()

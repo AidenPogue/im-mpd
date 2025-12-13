@@ -5,7 +5,7 @@
 #include <mpd/song.h>
 
 
-namespace ImMPD::TitleFormatting::BuiltIn
+namespace ImpyD::TitleFormatting::BuiltIn
 {
 
     /**

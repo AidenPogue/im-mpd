@@ -3,7 +3,7 @@
 #include "GLFW/glfw3.h"
 
 
-void ImMPD::SeekBar::Draw(MpdClientWrapper *client)
+void ImpyD::SeekBar::Draw(MpdClientWrapper *client)
 {
     if(ImGui::Begin(GetTitle(), nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
@@ -43,12 +43,12 @@ void ImMPD::SeekBar::Draw(MpdClientWrapper *client)
     ImGui::End();
 }
 
-const char *ImMPD::SeekBar::GetTitle()
+const char *ImpyD::SeekBar::GetTitle()
 {
     return "Seekbar";
 }
 
-void ImMPD::SeekBar::OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *data)
+void ImpyD::SeekBar::OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *data)
 {
     puts("Seekbar idle");
     if ((data->idleEvent & MPD_IDLE_PLAYER) != 0)
@@ -57,7 +57,7 @@ void ImMPD::SeekBar::OnIdleEvent(MpdClientWrapper *client, MpdIdleEventData *dat
     }
 }
 
-void ImMPD::SeekBar::InitState(MpdClientWrapper *client)
+void ImpyD::SeekBar::InitState(MpdClientWrapper *client)
 {
     client->BeginNoIdle();
     auto song = client->GetCurrentSong();
@@ -75,7 +75,7 @@ void ImMPD::SeekBar::InitState(MpdClientWrapper *client)
     client->EndNoIdle();
 }
 
-void ImMPD::SeekBar::SetState(mpd_song *song, mpd_status *status)
+void ImpyD::SeekBar::SetState(mpd_song *song, mpd_status *status)
 {
     if (song == nullptr || status == nullptr)
     {
@@ -96,10 +96,10 @@ void ImMPD::SeekBar::SetState(mpd_song *song, mpd_status *status)
     }
 }
 
-ImMPD::SeekBar::SeekBar()
+ImpyD::SeekBar::SeekBar()
 {
 
 }
 
-ImMPD::SeekBar::~SeekBar()
+ImpyD::SeekBar::~SeekBar()
 = default;

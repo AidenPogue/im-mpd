@@ -7,7 +7,7 @@
 #include "PanelBase.hpp"
 #include "SongTableColumn.hpp"
 
-namespace ImMPD
+namespace ImpyD
 {
     class QueueView : public PanelBase
     {

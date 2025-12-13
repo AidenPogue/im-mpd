@@ -3,7 +3,7 @@
 #include "PanelBase.hpp"
 #include "../MpdClientWrapper.hpp"
 
-namespace ImMPD
+namespace ImpyD
 {
     class PlaybackButtonsPanel : public PanelBase
     {

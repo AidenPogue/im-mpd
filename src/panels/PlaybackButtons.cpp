@@ -22,11 +22,11 @@ static void Toggle_Click(MpdClientWrapper *client)
     client->Toggle();
 }
 
-ImMPD::PlaybackButtonsPanel::~PlaybackButtonsPanel()
+ImpyD::PlaybackButtonsPanel::~PlaybackButtonsPanel()
 {
 }
 
-void ImMPD::PlaybackButtonsPanel::Draw(MpdClientWrapper *client)
+void ImpyD::PlaybackButtonsPanel::Draw(MpdClientWrapper *client)
 {
     bool result = false;
 
@@ -64,7 +64,7 @@ void ImMPD::PlaybackButtonsPanel::Draw(MpdClientWrapper *client)
     ImGui::End();
 }
 
-const char *ImMPD::PlaybackButtonsPanel::GetTitle()
+const char *ImpyD::PlaybackButtonsPanel::GetTitle()
 {
     return "Playback Control Buttons";
 }

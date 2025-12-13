@@ -4,7 +4,7 @@
 #include <string>
 #include <mpd/song.h>
 
-namespace ImMPD::TitleFormatting
+namespace ImpyD::TitleFormatting
 {
     std::string FormatSong(mpd_song *song, const std::string &format);
 

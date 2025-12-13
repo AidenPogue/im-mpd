@@ -153,7 +153,7 @@ int main(int, char**)
     double lastDrawTime = 0; 
 
     size_t numPanels = 5;
-    ImMPD::PanelBase *panels[] = {new ImMPD::Container(), new ImMPD::PlaybackButtonsPanel(), new ImMPD::SeekBar(), new ImMPD::VolumeControl(), new ImMPD::QueueView()};
+    ImpyD::PanelBase *panels[] = {new ImpyD::Container(), new ImpyD::PlaybackButtonsPanel(), new ImpyD::SeekBar(), new ImpyD::VolumeControl(), new ImpyD::QueueView()};
 
     if (client->GetIsConnected())
     {
@@ -198,7 +198,7 @@ int main(int, char**)
             
             for (int i = 0; i < numPanels; i++)
             {
-                ImMPD::PanelBase *panel = panels[i];
+                ImpyD::PanelBase *panel = panels[i];
 
                 client->Poll();
 

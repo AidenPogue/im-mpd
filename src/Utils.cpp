@@ -8,7 +8,7 @@
 #include "imgui.h"
 #include "stb_image.h"
 
-void ImMPD::Utils::FreeSongList(std::vector<mpd_song *> &songList)
+void ImpyD::Utils::FreeSongList(std::vector<mpd_song *> &songList)
 {
     for (auto *song : songList)
     {
@@ -24,7 +24,7 @@ void ImMPD::Utils::FreeSongList(std::vector<mpd_song *> &songList)
 
 // From https://github.com/ocornut/imgui/wiki/Image-Loading-and-Displaying-Examples#example-for-opengl-users
 // Simple helper function to load an image into a OpenGL texture with common settings
-bool ImMPD::Utils::LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height)
+bool ImpyD::Utils::LoadTextureFromMemory(const void* data, size_t data_size, GLuint* out_texture, int* out_width, int* out_height)
 {
     // Load from file
     int image_width = 0;
@@ -54,7 +54,7 @@ bool ImMPD::Utils::LoadTextureFromMemory(const void* data, size_t data_size, GLu
     return true;
 }
 
-void *ImMPD::Utils::CreateOrResizeBinaryBuffer(void *buffer, size_t &currentSize, size_t newSize)
+void *ImpyD::Utils::CreateOrResizeBinaryBuffer(void *buffer, size_t &currentSize, size_t newSize)
 {
     if (buffer == nullptr)
     {
@@ -69,7 +69,7 @@ void *ImMPD::Utils::CreateOrResizeBinaryBuffer(void *buffer, size_t &currentSize
     return buffer;
 }
 
-std::string ImMPD::Utils::MsToDurationString(unsigned milliseconds)
+std::string ImpyD::Utils::MsToDurationString(unsigned milliseconds)
 {
     unsigned ms = milliseconds;
 }

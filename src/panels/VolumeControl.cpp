@@ -6,7 +6,7 @@
 
 #include "imgui.h"
 
-namespace ImMPD {
+namespace ImpyD {
     void VolumeControl::SetState(mpd_status *status)
     {
         if (status == nullptr)

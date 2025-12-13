@@ -6,7 +6,7 @@
 
 #include "TitleFormatter.hpp"
 
-std::string ImMPD::TitleFormatting::BuiltIn::TagList(const mpd_song *song, std::vector<std::string> &args)
+std::string ImpyD::TitleFormatting::BuiltIn::TagList(const mpd_song *song, std::vector<std::string> &args)
 {
     auto err = GetTooFewArgumentsErrorMessage(2, args.size());
     if (err) return err.value();

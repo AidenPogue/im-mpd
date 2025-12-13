@@ -2,7 +2,7 @@
 
 #include "PanelBase.hpp"
 
-namespace ImMPD
+namespace ImpyD
 {
     class SeekBar : public PanelBase
     {

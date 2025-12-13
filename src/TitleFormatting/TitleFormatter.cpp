@@ -8,7 +8,7 @@
 
 
 
-namespace ImMPD::TitleFormatting
+namespace ImpyD::TitleFormatting
 {
     static const std::regex tagRegex = std::regex("%([a-zA-z]+)%", std::regex_constants::optimize | std::regex_constants::ECMAScript);
     static std::vector<std::string> artistTagListArgs = {"artist", ", "};
@@ -73,7 +73,7 @@ namespace ImMPD::TitleFormatting
 
     std::string GetInvalidTagErrorMessage(const std::string &tagName)
     {
-        return "'" + tagName + "' is not a valid tag";
+        return GetErrorString("'" + tagName + "' is not a valid tag");
     }
 }
 

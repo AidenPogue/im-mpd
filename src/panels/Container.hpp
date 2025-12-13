@@ -7,9 +7,9 @@
 #include "PanelBase.hpp"
 
 
-namespace ImMPD
+namespace ImpyD
 {
-    class Container : public ImMPD::PanelBase
+    class Container : public ImpyD::PanelBase
     {
     public:
         const char * GetTitle() override;

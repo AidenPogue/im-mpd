@@ -11,7 +11,7 @@
 #include "../Utils.hpp"
 #include "../TitleFormatting/TitleFormatter.hpp"
 
-namespace ImMPD
+namespace ImpyD
 {
     static std::vector<SongTableColumn> testColumns =
         {

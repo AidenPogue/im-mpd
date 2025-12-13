@@ -6,7 +6,7 @@
 #define IM_MPD_VOLUMECONTROL_H
 #include "PanelBase.hpp"
 
-namespace ImMPD {
+namespace ImpyD {
     class VolumeControl : public PanelBase
     {
     private:

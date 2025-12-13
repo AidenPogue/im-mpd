@@ -1,7 +1,7 @@
 #pragma once
 #include "../MpdClientWrapper.hpp"
 
-namespace ImMPD
+namespace ImpyD
 {
     class PanelBase
     {

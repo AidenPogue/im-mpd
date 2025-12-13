@@ -7,7 +7,7 @@
 #include "PanelBase.hpp"
 #include "mpd/database.h"
 
-namespace ImMPD
+namespace ImpyD
 {
     class MediaLibraryTree : public PanelBase
     {

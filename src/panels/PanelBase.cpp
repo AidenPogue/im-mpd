@@ -2,7 +2,7 @@
 
 
 
-ImMPD::PanelBase::~PanelBase()
+ImpyD::PanelBase::~PanelBase()
 {
     
 }

@@ -4,7 +4,7 @@
 
 #include "MediaLibraryTree.hpp"
 
-namespace ImMPD {
+namespace ImpyD {
     const char * MediaLibraryTree::GetTitle()
     {
         return "Media Library Tree View";

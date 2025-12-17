@@ -13,7 +13,7 @@ namespace ImpyD {
     private:
         int editingValue = -1;
         int currentValue = 0;
-        void SetState(mpd_status *status);
+        void SetState(const MpdClientWrapper::MpdStatusPtr &status);
 
     public:
         IMPYD_REGISTER_PANEL_FactoryFunc(VolumeControl)
@@ -26,11 +26,11 @@ namespace ImpyD {
 
         ~VolumeControl() override;
 
-        void OnIdleEvent(MpdClientWrapper &client, MpdIdleEventData &data) override;
+        void OnIdleEvent(MpdClientWrapper &client, mpd_idle event) override;
 
         void InitState(MpdClientWrapper &client) override;
 
-        const std::string PanelName() override;
+        std::string PanelName() override;
     };
 } // ImMPD
 

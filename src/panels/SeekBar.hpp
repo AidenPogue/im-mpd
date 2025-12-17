@@ -17,7 +17,7 @@ namespace ImpyD
 
         mpd_state currentState = MPD_STATE_STOP;
 
-        void SetState(mpd_song *song, mpd_status *status);
+        void SetState(const MpdClientWrapper::MpdSongPtr &song, const MpdClientWrapper::MpdStatusPtr &status);
 
     public:
         IMPYD_REGISTER_PANEL_FactoryFunc(SeekBar)
@@ -32,10 +32,10 @@ namespace ImpyD
 
         void DrawContents(MpdClientWrapper &client) override;
 
-        void OnIdleEvent(MpdClientWrapper &client, MpdIdleEventData &data) override;
+        void OnIdleEvent(MpdClientWrapper &client, mpd_idle event) override;
 
         void InitState(MpdClientWrapper &client) override;
 
-        const std::string PanelName() override;
+        std::string PanelName() override;
     };
 }

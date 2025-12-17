@@ -1,5 +1,6 @@
 #include "SeekBar.hpp"
 #include "imgui.h"
+#include "../Utils.hpp"
 #include "GLFW/glfw3.h"
 
 
@@ -19,7 +20,7 @@ void ImpyD::SeekBar::DrawContents(MpdClientWrapper &client)
     }
 
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-    ImGui::SliderFloat("##", &currentSeek, 0, currentDuration);
+    ImGui::SliderFloat("##", &currentSeek, 0, currentDuration, Utils::SecondsToDurationString(currentSeek).c_str());
 
     if (ImGui::IsItemDeactivatedAfterEdit())
     {
@@ -39,12 +40,11 @@ void ImpyD::SeekBar::DrawContents(MpdClientWrapper &client)
 
 }
 
-void ImpyD::SeekBar::OnIdleEvent(MpdClientWrapper &client, MpdIdleEventData &data)
+void ImpyD::SeekBar::OnIdleEvent(MpdClientWrapper &client, mpd_idle event)
 {
-    puts("Seekbar idle");
-    if ((data.idleEvent & MPD_IDLE_PLAYER) != 0)
+    if (event & MPD_IDLE_PLAYER | MPD_IDLE_QUEUE)
     {
-        SetState(data.currentSong, data.currentStatus);
+        SetState(client.GetCurrentSong(), client.GetStatus());
     }
 }
 
@@ -52,38 +52,31 @@ void ImpyD::SeekBar::InitState(MpdClientWrapper &client)
 {
     windowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
     client.BeginNoIdle();
-    auto song = client.GetCurrentSong();
-    auto status = client.GetStatus();
+
+    auto& song = client.GetCurrentSong();
+    auto& status = client.GetStatus();
     SetState(song, status);
 
-    if (song != nullptr)
-    {
-        mpd_song_free(song);
-    }
-    if (status != nullptr)
-    {
-        mpd_status_free(status);
-    }
     client.EndNoIdle();
 }
 
-const std::string ImpyD::SeekBar::PanelName()
+std::string ImpyD::SeekBar::PanelName()
 {
     return GetFactoryName();
 }
 
-void ImpyD::SeekBar::SetState(mpd_song *song, mpd_status *status)
+void ImpyD::SeekBar::SetState(const MpdClientWrapper::MpdSongPtr &song, const MpdClientWrapper::MpdStatusPtr &status)
 {
-    if (song == nullptr || status == nullptr)
+    if (status == nullptr)
     {
         return;
     }
 
-    currentState = mpd_status_get_state(status);
-    if (currentState == MPD_STATE_PLAY || currentState == MPD_STATE_PAUSE)
+    currentState = mpd_status_get_state(status.get());
+    if (song != nullptr && (currentState == MPD_STATE_PLAY || currentState == MPD_STATE_PAUSE))
     {
-        currentElapsedSeconds = mpd_status_get_elapsed_ms(status) / 1000.0f;
-        currentDuration = mpd_song_get_duration_ms(song) / 1000.0f;
+        currentElapsedSeconds = mpd_status_get_elapsed_ms(status.get()) / 1000.0f;
+        currentDuration = mpd_song_get_duration_ms(song.get()) / 1000.0f;
         elapsedSecondsSetAtTime = glfwGetTime();
     }
     else

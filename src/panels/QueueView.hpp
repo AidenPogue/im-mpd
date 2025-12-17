@@ -17,7 +17,7 @@ namespace ImpyD
         std::vector<std::vector<std::string>> cellValueCache;
         unsigned currentSongId = 0;
 
-        void UpdateQueue(MpdClientWrapper *client);
+        void UpdateQueue(MpdClientWrapper &client);
 
         static void CacheRowIfNeeded(mpd_song *song, const std::vector<SongTableColumn> &columns, std::vector<std::string> &rowCache);
 
@@ -29,11 +29,13 @@ namespace ImpyD
 
         void DrawContents(MpdClientWrapper &client) override;
 
-        void OnIdleEvent(MpdClientWrapper &client, MpdIdleEventData &data) override;
+        void SetState(MpdClientWrapper &client);
+
+        void OnIdleEvent(MpdClientWrapper &client, mpd_idle event) override;
 
         void InitState(MpdClientWrapper &client) override;
 
-        const std::string PanelName() override;
+        std::string PanelName() override;
     };
 } // ImMPD
 

@@ -49,7 +49,7 @@ void ImpyD::PlaybackButtonsPanel::DrawContents(MpdClientWrapper &client)
     }
 }
 
-const std::string ImpyD::PlaybackButtonsPanel::PanelName()
+std::string ImpyD::PlaybackButtonsPanel::PanelName()
 {
     return GetFactoryName();
 }

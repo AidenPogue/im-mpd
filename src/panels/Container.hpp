@@ -5,16 +5,24 @@
 #ifndef IM_MPD_CONTAINER_HPP
 #define IM_MPD_CONTAINER_HPP
 #include "PanelBase.hpp"
+#include "../PanelFactory/RegisterPanel.hpp"
 
 
 namespace ImpyD
 {
-    class Container : public PanelBase
+    class Container : public PanelBase, PanelFactory::RegisterPanel<Container>
     {
     public:
+        IMPYD_REGISTER_PANEL_FactoryFunc(Container)
+        IMPYD_REGISTER_PANEL_GetFactoryName("Container")
+
         Container(int panelId) : PanelBase(panelId) {}
 
         void DrawContents(MpdClientWrapper &client) override;
+
+        std::string PanelName() override;
+
+        PanelFlags GetPanelFlags() override;
     };
 }
 

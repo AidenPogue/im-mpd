@@ -1,7 +1,7 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#include "MpdClientWrapper.hpp"
+#include "Mpd/MpdClientWrapper.hpp"
 #include <stdio.h>
 #include <iostream>
 
@@ -141,7 +141,7 @@ int main(int, char**)
     // ImpyD::PanelRegistry::RegisterPanel("impy-d_playbackbuttons", [](int id) {return std::make_unique<ImpyD::PlaybackButtonsPanel>(id);});
     // ImpyD::PanelRegistry::RegisterPanel("impy-d_queueview", [](int id) {return std::make_unique<ImpyD::QueueView>(id);});
 
-    MpdClientWrapper client = MpdClientWrapper("127.0.0.1", 6600);
+    MpdClientWrapper client = MpdClientWrapper(nullptr, 0);
     auto mainWindow = ImpyD::MainWindow();
 
     while (!glfwWindowShouldClose(window))
@@ -170,6 +170,11 @@ int main(int, char**)
             ImGui::ShowDemoWindow(&show_demo_window);
 
         client.Poll();
+
+        if (client.HasIdleEvent())
+        {
+            mainWindow.SendIdleEventToPanels(client, client.GetIdleEventsAndClear());
+        }
 
         mainWindow.Draw(client);
 

@@ -8,9 +8,16 @@
 
 void ImpyD::Container::DrawContents(MpdClientWrapper &client)
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("Container");
-    ImGui::DockSpace(10);
-    ImGui::End();
-    ImGui::PopStyleVar();
+    //dockspace id can't be 0, and 1 is the main dockspace.
+    ImGui::DockSpace(panelId + 100);
+}
+
+std::string ImpyD::Container::PanelName()
+{
+    return GetFactoryName();
+}
+
+ImpyD::PanelFlags ImpyD::Container::GetPanelFlags()
+{
+    return PanelFlags_DrawEarly | PanelFlags_AlwaysDraw;
 }

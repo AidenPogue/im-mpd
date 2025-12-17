@@ -4,8 +4,6 @@
 
 #include "QueueView.hpp"
 
-#include <iostream>
-
 #include "imgui.h"
 #include "SongTableColumn.hpp"
 #include "../Utils.hpp"
@@ -14,17 +12,17 @@
 namespace ImpyD
 {
     static std::vector<SongTableColumn> testColumns =
-        {
+    {
         SongTableColumn("disc-track", "Disc + Track", "%disc%.%track%"),
         SongTableColumn("title", "Title", "%title%"),
         SongTableColumn("artist", "Artist", "%artist%"),
         SongTableColumn("album", "Album", "%album%"),
     };
 
-    void QueueView::UpdateQueue(MpdClientWrapper *client)
+    void QueueView::UpdateQueue(MpdClientWrapper &client)
     {
         Utils::FreeSongList(currentQueue);
-        client->GetQueue(currentQueue);
+        client.GetQueue(currentQueue);
         cellValueCache.resize(currentQueue.size());
         for (auto &row : cellValueCache)
         {
@@ -50,6 +48,19 @@ namespace ImpyD
 
     void QueueView::DrawContents(MpdClientWrapper &client)
     {
+        //Buttons
+        if (ImGui::Button("Clear"))
+        {
+            client.BeginNoIdle();
+            client.ClearQueue();
+            client.EndNoIdle();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Randomize"))
+        {
+
+        }
+
         ImGuiListClipper clipper;
         clipper.Begin(currentQueue.size());
         if (ImGui::BeginTable("plTable", testColumns.size(), ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY))
@@ -113,15 +124,20 @@ namespace ImpyD
         }
     }
 
-    void QueueView::OnIdleEvent(MpdClientWrapper &client, MpdIdleEventData &data)
+    void QueueView::SetState(MpdClientWrapper &client)
     {
-        if (data.idleEvent == MPD_IDLE_QUEUE)
+        currentSongId = mpd_status_get_song_id(client.GetStatus().get());
+    }
+
+    void QueueView::OnIdleEvent(MpdClientWrapper &client, mpd_idle event)
+    {
+        if (event & MPD_IDLE_QUEUE)
         {
-            UpdateQueue(&client);
+            UpdateQueue(client);
         }
-        if (data.idleEvent == MPD_IDLE_PLAYER)
+        if (event & MPD_IDLE_PLAYER)
         {
-            currentSongId = mpd_status_get_song_id(data.currentStatus);
+            SetState(client);
         }
     }
 
@@ -129,11 +145,12 @@ namespace ImpyD
     {
 
         client.BeginNoIdle();
-        UpdateQueue(&client);
+        UpdateQueue(client);
+        SetState(client);
         client.EndNoIdle();
     }
 
-    const std::string QueueView::PanelName()
+    std::string QueueView::PanelName()
     {
         return GetFactoryName();
     }

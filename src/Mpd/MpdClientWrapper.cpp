@@ -1,16 +1,18 @@
 #include "MpdClientWrapper.hpp"
+#include "MpdIdleEventData.hpp"
 
 #include <assert.h>
 #include <iostream>
+#include <optional>
 #include <poll.h>
 #include <mpd/status.h>
 
-#include "Utils.hpp"
+#include "MpdSongWrapper.hpp"
 
 static uint8_t *binaryChunkBuffer;
 static size_t binaryChunkBufferSize = 0;
 
-MpdClientWrapper::MpdClientWrapper(const char* hostname, uint port, unsigned binaryLimit)
+MpdClientWrapper::MpdClientWrapper(const char* hostname, unsigned int port, unsigned binaryLimit)
 {
     this->hostname = hostname;
     this->port = port;
@@ -30,38 +32,17 @@ MpdClientWrapper::~MpdClientWrapper()
 {
 }
 
+void MpdClientWrapper::ClearCache()
+{
+    cache = MpdClientCache();
+}
+
 void MpdClientWrapper::ThrowIfNotConnected()
 {
     if (!GetIsConnected())
     {
-        throw 67;
+        throw std::runtime_error(mpd_connection_get_error_message(connection));
     }
-}
-
-void MpdClientWrapper::HandleIdle(mpd_idle idle)
-{
-    //Reused for all events.
-    static MpdIdleEventData eventData;
-
-    eventData.idleEvent = idle;
-    eventData.currentSong = GetCurrentSong();
-    eventData.currentStatus = GetStatus();
-
-    for (const auto &pair : listeners)
-    {
-        if (!pair.second)
-        {
-            continue;
-        }
-
-        pair.second(*this, eventData);
-    }
-
-    // playInfo.isPlaying = mpd_status_get_state(status) == MPD_STATE_PLAY;
-    // playInfo.startedAtElapsedSeconds = mpd_status_get_elapsed_ms(status) / 1000.0f;
-    // playInfo.startedAtGlfwTime = glfwGetTime();
-
-    eventData.Free();
 }
 
 int MpdClientWrapper::Connect()
@@ -93,17 +74,16 @@ bool MpdClientWrapper::ReceiveIdle()
 
     int ret = poll(&pfd, 1, 0);
 
-    if (ret > 0 && (pfd.revents & (POLLIN | POLLERR | POLLHUP)))
+    if (ret > 0 && pfd.revents & (POLLIN | POLLERR | POLLHUP))
     {
-        mpd_idle idle = mpd_recv_idle(connection, false);
-        std::cout << mpd_idle_name(idle) << std::endl;
-        HandleIdle(idle);
+        idleEvents |= mpd_recv_idle(connection, false);
+        ClearCache();
         return false;
     }
     return !noIdleMode;
 }
 
-bool MpdClientWrapper::GetIsConnected()
+bool MpdClientWrapper::GetIsConnected() const
 {
     bool null = connection == nullptr;
     if (!null && mpd_connection_get_error(connection) != MPD_ERROR_SUCCESS)
@@ -113,22 +93,6 @@ bool MpdClientWrapper::GetIsConnected()
     }
 
     return true;
-}
-
-int MpdClientWrapper::AddIdleListener(MpdClientIdleEventCallback listener)
-{
-    auto id = nextListenerId++;
-    listeners.emplace(id, listener);
-    return id;
-}
-
-void MpdClientWrapper::RemoveIdleListener(int id)
-{
-    if (listeners.find(id) == listeners.end())
-    {
-        throw std::runtime_error("No listener with id " + std::to_string(id) + " registered.");
-    }
-    listeners.erase(id);
 }
 
 void MpdClientWrapper::BeginNoIdle()
@@ -144,20 +108,33 @@ void MpdClientWrapper::BeginNoIdle()
 void MpdClientWrapper::EndNoIdle()
 {
     assert(noIdleMode);
-    if (!ReceiveIdle())
-    {
-        mpd_send_idle(connection);
-    }
+    ReceiveIdle();
+    mpd_send_idle(connection);
     noIdleMode = false;
 }
 
-mpd_song *MpdClientWrapper::GetCurrentSong()
+bool MpdClientWrapper::HasIdleEvent()
+{
+    return idleEvents != 0;
+}
+
+mpd_idle MpdClientWrapper::GetIdleEventsAndClear()
+{
+    auto old = idleEvents;
+    idleEvents = 0;
+    return static_cast<mpd_idle>(old);
+}
+
+const MpdClientWrapper::MpdSongPtr &MpdClientWrapper::GetCurrentSong()
 {
     ThrowIfNotConnected();
 
-    auto song= mpd_run_current_song(connection);
+    if (cache.currentSong == nullptr)
+    {
+        cache.currentSong = {mpd_run_current_song(connection), &mpd_song_free};
+    }
     
-    return song;
+    return cache.currentSong;
 }
 
 bool MpdClientWrapper::GetQueue(std::vector<mpd_song *> &songList)
@@ -170,11 +147,19 @@ bool MpdClientWrapper::GetQueue(std::vector<mpd_song *> &songList)
     return ReceiveSongList(songList);
 }
 
+bool MpdClientWrapper::ClearQueue()
+{
+    ThrowIfNotConnected();
+    ClearCache();
+    return mpd_run_clear(connection);
+}
+
 bool MpdClientWrapper::PlayCurrent()
 {
     ThrowIfNotConnected();
 
     auto res= mpd_run_play(connection);
+    ClearCache();
     
     return res;
 }
@@ -183,27 +168,23 @@ bool MpdClientWrapper::PlayId(unsigned id)
 {
     ThrowIfNotConnected();
     auto res = mpd_run_play_id(connection, id);
+    ClearCache();
     return res;
 }
 
 bool MpdClientWrapper::Pause()
 {
     ThrowIfNotConnected();
-
     auto res= mpd_run_pause(connection, true);
-    
+    ClearCache();
     return res;
 }
 
 bool MpdClientWrapper::Toggle()
 {
     ThrowIfNotConnected();
-
-
-
-    auto status = GetStatus();
-    auto state = mpd_status_get_state(status);
-    mpd_status_free(status);
+    auto& status = GetStatus();
+    auto state = mpd_status_get_state(status.get());
 
     bool res = false;
 
@@ -215,60 +196,59 @@ bool MpdClientWrapper::Toggle()
     {
         res = mpd_run_pause(connection, state != MPD_STATE_PAUSE);
     }
-
-    
+    ClearCache();
     return res;
 }
 
 bool MpdClientWrapper::Next()
 {
     ThrowIfNotConnected();
-
     auto res= mpd_run_next(connection);
-    
+    ClearCache();
     return res;
 }
 
 bool MpdClientWrapper::Prev()
 {
     ThrowIfNotConnected();
-
     auto res= mpd_run_previous(connection);
-    
+    ClearCache();
     return res;
 }
 
 bool MpdClientWrapper::SeekToSeconds(float s, bool relative)
 {
     ThrowIfNotConnected();
-
     auto res= mpd_run_seek_current(connection, s, relative);
-    
+    ClearCache();
     return res;
 }
 
 bool MpdClientWrapper::SetVolume(int volume)
 {
     ThrowIfNotConnected();
-
     auto res= mpd_run_set_volume(connection, volume);
-    
+    ClearCache();
     return res;
 }
 
 bool MpdClientWrapper::ChangeVolume(int by)
 {
     ThrowIfNotConnected();
+    ClearCache();
     return mpd_run_change_volume(connection, by);
 }
 
-mpd_status *MpdClientWrapper::GetStatus()
+const MpdClientWrapper::MpdStatusPtr &MpdClientWrapper::GetStatus()
 {
     ThrowIfNotConnected();
 
-    auto status = mpd_run_status(connection);
+    if (cache.status == nullptr)
+    {
+        cache.status = {mpd_run_status(connection), &mpd_status_free};
+    }
     
-    return status;
+    return cache.status;
 }
 
 bool MpdClientWrapper::ReceiveSongList(std::vector<mpd_song *> &songList)

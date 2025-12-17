@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PanelBase.hpp"
-#include "../MpdClientWrapper.hpp"
+#include "../Mpd/MpdClientWrapper.hpp"
 #include "../PanelFactory/RegisterPanel.hpp"
 
 namespace ImpyD
@@ -19,6 +19,6 @@ namespace ImpyD
 
         void DrawContents(MpdClientWrapper &client) override;
 
-        const std::string PanelName() override;
+        std::string PanelName() override;
     };
 }

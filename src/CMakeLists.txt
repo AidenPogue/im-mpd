@@ -3,7 +3,7 @@ project(IM-MPD)
 target_sources(im-mpd
     PUBLIC 
         main.cpp
-        MpdClientWrapper.cpp
+        Mpd/MpdClientWrapper.cpp
         Utils.cpp
         stb_image.cpp
         MainWindow.cpp
@@ -12,3 +12,4 @@ target_sources(im-mpd
 add_subdirectory(panels)
 add_subdirectory(TitleFormatting)
 add_subdirectory(PanelFactory)
+add_subdirectory(Mpd)

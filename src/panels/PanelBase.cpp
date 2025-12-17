@@ -4,6 +4,16 @@ ImpyD::PanelBase::PanelBase(int panelId) : panelId(panelId)
 {
 }
 
+ImpyD::PanelFlags ImpyD::PanelBase::GetPanelFlags()
+{
+    return PanelFlags_None;
+}
+
+bool ImpyD::PanelBase::ShouldClose() const
+{
+    return !isOpen;
+}
+
 void ImpyD::PanelBase::SetTitle(const std::string &title)
 {
     this->title = title + "###" + std::to_string(panelId);
@@ -17,7 +27,7 @@ void ImpyD::PanelBase::Draw(MpdClientWrapper &client)
         SetTitle(PanelName());
     }
 
-    if (ImGui::Begin(title.c_str(), &isOpen, windowFlags))
+    if (ImGui::Begin(title.c_str(), &isOpen, windowFlags) || GetPanelFlags() & PanelFlags_AlwaysDraw)
     {
         if (ImGui::BeginPopupContextItem())
         {
@@ -36,9 +46,4 @@ void ImpyD::PanelBase::Draw(MpdClientWrapper &client)
 ImpyD::PanelBase::~PanelBase()
 {
     printf("Desctrocota\n");
-}
-
-void ImpyD::PanelBase::RegisterCallbacks(MpdClientWrapper &client)
-{
-    callbackId = client.AddIdleListener([this](MpdClientWrapper &c, MpdIdleEventData &d) {this->OnIdleEvent(c, d);});
 }

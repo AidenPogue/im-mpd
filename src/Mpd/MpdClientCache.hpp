@@ -1,0 +1,7 @@
+#ifndef IM_MPD_MPDCLIENTCACHE_HPP
+#define IM_MPD_MPDCLIENTCACHE_HPP
+#include "MpdClientWrapper.hpp"
+
+
+
+#endif //IM_MPD_MPDCLIENTCACHE_HPP

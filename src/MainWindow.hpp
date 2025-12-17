@@ -1,8 +1,10 @@
 #ifndef IM_MPD_MAINWINDOW_HPP
 #define IM_MPD_MAINWINDOW_HPP
+#include <list>
 #include <memory>
 
-#include "MpdClientWrapper.hpp"
+#include "Mpd/MpdClientWrapper.hpp"
+#include "Mpd/MpdIdleEventData.hpp"
 #include "panels/PanelBase.hpp"
 
 namespace ImpyD
@@ -23,6 +25,8 @@ namespace ImpyD
         MainWindow();
 
         void Draw(MpdClientWrapper &client);
+
+        void SendIdleEventToPanels(MpdClientWrapper &client, mpd_idle event) const;
     };
 } // ImpyD
 

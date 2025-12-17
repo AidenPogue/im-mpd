@@ -7,14 +7,14 @@
 #include "imgui.h"
 
 namespace ImpyD {
-    void VolumeControl::SetState(mpd_status *status)
+    void VolumeControl::SetState(const MpdClientWrapper::MpdStatusPtr &status)
     {
         if (status == nullptr)
         {
             return;
         }
 
-        currentValue = mpd_status_get_volume(status);
+        currentValue = mpd_status_get_volume(status.get());
     }
 
     void VolumeControl::DrawContents(MpdClientWrapper &client)
@@ -45,27 +45,23 @@ namespace ImpyD {
     }
 
 
-    void VolumeControl::OnIdleEvent(MpdClientWrapper &client, MpdIdleEventData &data)
+    void VolumeControl::OnIdleEvent(MpdClientWrapper &client, mpd_idle event)
     {
-        if (data.idleEvent == MPD_IDLE_MIXER)
+        if (event & MPD_IDLE_MIXER)
         {
-            SetState(data.currentStatus);
+            SetState(client.GetStatus());
         }
     }
 
     void VolumeControl::InitState(MpdClientWrapper &client)
     {
         client.BeginNoIdle();
-        auto status = client.GetStatus();
+        auto& status = client.GetStatus();
         SetState(status);
-        if (status != nullptr)
-        {
-            mpd_status_free(status);
-        }
         client.EndNoIdle();
     }
 
-    const std::string VolumeControl::PanelName()
+    std::string VolumeControl::PanelName()
     {
         return GetFactoryName();
     }

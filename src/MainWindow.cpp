@@ -1,11 +1,6 @@
-//
-// Created by aiden on 2025-12-13.
-//
-
 #include "MainWindow.hpp"
 
 #include "PanelFactory/PanelRegistry.hpp"
-#include "panels/PlaybackButtons.hpp"
 
 namespace ImpyD
 {
@@ -43,17 +38,35 @@ namespace ImpyD
     void MainWindow::CreatePanelById(MpdClientWrapper &client, const std::string &id)
     {
         auto panel = PanelFactory::Registry::CreatePanelById(id, nextPanelId++);
-        panel->RegisterCallbacks(client);
         panel->InitState(client);
-        panels.push_back(std::move(panel));
+
+        if (panel->GetPanelFlags() & PanelFlags_DrawEarly)
+        {
+            panels.push_front(std::move(panel));
+        }
+        else
+        {
+            panels.push_back(std::move(panel));
+        }
     }
 
     void MainWindow::Draw(MpdClientWrapper &client)
     {
+        // bool idle = false;
+        // if (!panelsToCreate.empty())
+        // {
+        //     client.BeginNoIdle();
+        //     idle = true;
+        // }
         for (const auto &id : panelsToCreate)
         {
             CreatePanelById(client, id);
         }
+        // if (idle)
+        // {
+        //     client.EndNoIdle();
+        // }
+
         panelsToCreate.clear();
 
         panels.remove_if(removeClosedPanelPredicate);
@@ -63,6 +76,24 @@ namespace ImpyD
         for (const auto &panel : panels)
         {
             panel->Draw(client);
+        }
+    }
+
+    void MainWindow::SendIdleEventToPanels(MpdClientWrapper &client, mpd_idle event) const
+    {
+        bool idle = false;
+        if (!panels.empty())
+        {
+            client.BeginNoIdle();
+            idle = true;
+        }
+        for (const auto &panel : panels)
+        {
+            panel->OnIdleEvent(client, event);
+        }
+        if (idle)
+        {
+            client.EndNoIdle();
         }
     }
 } // ImpyD

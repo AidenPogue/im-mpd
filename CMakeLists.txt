@@ -4,7 +4,11 @@ project(IM-MPD)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -ggdb")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable(im-mpd)
+
+set_property(TARGET im-mpd PROPERTY CXX_STANDARD 20)
 
 add_subdirectory(src)
 
@@ -14,6 +18,7 @@ add_library(imgui)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLFW REQUIRED glfw3)
 pkg_check_modules(X_11 REQUIRED x11)
+pkg_check_modules(FC REQUIRED fontconfig)
 
 target_sources(imgui
   PRIVATE
@@ -42,9 +47,10 @@ target_link_libraries(im-mpd
         imgui
         ${GLFW_LIBRARIES}
         ${X_11_LIBRARIES}
+        ${FC_LIBRARIES}
         mpdclient
         GL
 )
 
 # target_include_directories(im-mpd PUBLIC ${GLFW_INCLUDE_DIRS})
-target_compile_options(im-mpd PUBLIC ${GLFW_CFLAGS_OTHER} ${X_11_CFLAGS_OTHER})
+target_compile_options(im-mpd PUBLIC ${GLFW_CFLAGS_OTHER} ${X_11_CFLAGS_OTHER} ${FC_CFLAGS_OTHER})

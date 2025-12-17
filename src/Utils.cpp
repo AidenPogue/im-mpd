@@ -4,6 +4,7 @@
 #include "Utils.hpp"
 
 #include <assert.h>
+#include <chrono>
 
 #include "imgui.h"
 #include "stb_image.h"
@@ -69,7 +70,11 @@ void *ImpyD::Utils::CreateOrResizeBinaryBuffer(void *buffer, size_t &currentSize
     return buffer;
 }
 
-std::string ImpyD::Utils::MsToDurationString(unsigned milliseconds)
+std::string ImpyD::Utils::SecondsToDurationString(float seconds)
 {
-    unsigned ms = milliseconds;
+    //milliseconds = milliseconds % 1000;
+    auto sec = (unsigned)seconds;
+    auto minutes = sec / 60;
+    auto hours = minutes / 60;
+    return std::format("{}{:02}:{:02}", hours > 0 ? std::format("{:02}:", hours) : "", minutes % 60, sec % 60);
 }

@@ -1,8 +1,9 @@
 #pragma once
-#include <utility>
-
 #include "imgui.h"
-#include "../MpdClientWrapper.hpp"
+#include "PanelFlags.hpp"
+#include "../Mpd/MpdClientWrapper.hpp"
+#include "../Mpd/MpdIdleEventData.hpp"
+#include <string>
 
 namespace ImpyD
 {
@@ -10,24 +11,26 @@ namespace ImpyD
     {
     private:
         bool isOpen = true;
-        const int panelId = -1;
+
         int callbackId;
         std::string title;
     protected:
+        const int panelId = -1;
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_None;
-
         virtual void DrawContents(MpdClientWrapper &client) {}
 
         PanelBase(int panelId);
 
     public:
-        virtual const std::string PanelName() = 0;
+        virtual PanelFlags GetPanelFlags();
+
+        virtual std::string PanelName() = 0;
 
         /**
          * Gets if the panel has been closed by the user. Closed panels should be released.
          * @return Whether the panel is closed.
          */
-        bool ShouldClose() const { return !isOpen; }
+        bool ShouldClose() const;
 
         /**
          * Sets the title of this panel's window.
@@ -42,16 +45,14 @@ namespace ImpyD
         /**
          * Called when any idle event is recieved from the client.
          * @param client The client that produced the idle event.
-         * @param data Data for the idle event.
+         * @param event Data for the idle event.
          */
-        virtual void OnIdleEvent(MpdClientWrapper &client, MpdIdleEventData &data) {}
+        virtual void OnIdleEvent(MpdClientWrapper &client, mpd_idle event) {}
 
         /**
          * Called once immediately after creating the panel.
          * @param client The connected client.
          */
         virtual void InitState(MpdClientWrapper &client) {}
-
-        void RegisterCallbacks(MpdClientWrapper &client);
     };
 } // namespace ImMPD

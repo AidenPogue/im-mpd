@@ -75,6 +75,21 @@ namespace ImpyD::TitleFormatting
     {
         return GetErrorString("'" + tagName + "' is not a valid tag");
     }
+
+    std::set<mpd_tag_type> GetUsedTags(const std::string &format)
+    {
+        std::set<mpd_tag_type> tags;
+
+        auto begin = std::sregex_iterator(format.begin(), format.end(), tagRegex);
+        auto end = std::sregex_iterator();
+
+        for (auto it = begin; it != end; ++it)
+        {
+            tags.insert(mpd_tag_name_iparse(it->str().c_str()));
+        }
+
+        return std::move(tags);
+    }
 }
 
 

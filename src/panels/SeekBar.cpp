@@ -77,7 +77,7 @@ void ImpyD::SeekBar::SetState(const MpdClientWrapper::MpdSongPtr &song, const Mp
     {
         currentElapsedSeconds = mpd_status_get_elapsed_ms(status.get()) / 1000.0f;
         currentDuration = mpd_song_get_duration_ms(song.get()) / 1000.0f;
-        elapsedSecondsSetAtTime = glfwGetTime();
+        elapsedSecondsSetAtTime = ImGui::GetTime();
     }
     else
     {

@@ -1,19 +1,47 @@
 #include "MpdSongWrapper.hpp"
 
+#include <assert.h>
 #include <stdexcept>
 
-MpdSongWrapper::MpdSongWrapper(mpd_song *song) : song(song)
+MpdSongWrapper::MpdSongWrapper(mpd_song *song) : song(std::shared_ptr<mpd_song>(song, &mpd_song_free))
 {
-    if (song == nullptr)
-    {
-        throw std::runtime_error("Song cannot be null.");
-    }
+    assert(song);
 }
 
-MpdSongWrapper::~MpdSongWrapper()
+std::string MpdSongWrapper::GetSingleValue(mpd_tag_type key) const
 {
-    if (song != nullptr)
+    return mpd_song_get_tag(song.get(), key, 0);
+}
+
+std::vector<std::string> MpdSongWrapper::GetAllValues(mpd_tag_type key) const
+{
+    auto list = std::vector<std::string>();
+    //Most tags probably won't have more than 2 values.
+    list.reserve(2);
+
+    auto idx = 0;
+    auto rawValue = mpd_song_get_tag(song.get(), key, idx);
+
+    while (rawValue != nullptr)
     {
-        mpd_song_free(song);
+        list.emplace_back(rawValue);
+        rawValue = mpd_song_get_tag(song.get(), key, ++idx);
     }
+
+    return list;
+}
+
+unsigned MpdSongWrapper::GetId() const
+{
+    return mpd_song_get_id(song.get());
+}
+
+unsigned MpdSongWrapper::GetDurationMs() const
+{
+    return mpd_song_get_duration_ms(song.get());
+}
+
+std::string MpdSongWrapper::GetUri() const
+{
+    return mpd_song_get_uri(song.get());
 }

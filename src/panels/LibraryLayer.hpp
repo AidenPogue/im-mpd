@@ -15,14 +15,13 @@ public:
     {
     }
 
-private:
-    std::string displayFormat;
-    std::string sortingFormat;
-    bool eagerLoadChildren = false;
+    const std::string displayFormat;
+    const std::string sortingFormat;
+    const bool eagerLoadChildren = false;
     /**
      * If true, any children of an instance of this layer will be placed into the instance's parent if it is the only child of the parent.
      */
-    bool expandIfNoSiblings = false;
+    const bool expandIfNoSiblings = false;
 };
 
 

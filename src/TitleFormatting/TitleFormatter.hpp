@@ -6,9 +6,11 @@
 #include <vector>
 #include <mpd/song.h>
 
+#include "ITagged.hpp"
+
 namespace ImpyD::TitleFormatting
 {
-    std::string FormatSong(mpd_song *song, const std::string &format);
+    std::string FormatITagged(const ITagged &tagged, const std::string &format);
 
     std::optional<std::string> GetTooFewArgumentsErrorMessage(size_t required, size_t got);
 

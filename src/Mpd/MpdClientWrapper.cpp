@@ -140,14 +140,10 @@ const MpdClientWrapper::MpdSongPtr &MpdClientWrapper::GetCurrentSong()
     return cache.currentSong;
 }
 
-bool MpdClientWrapper::GetQueue(std::vector<mpd_song *> &songList)
+std::vector<MpdSongWrapper> MpdClientWrapper::GetQueue() const
 {
-    auto res = mpd_send_list_queue_meta(connection);
-    if (!res)
-    {
-        return false;
-    }
-    return ReceiveSongList(songList);
+    mpd_send_list_queue_meta(connection);
+    return ReceiveSongList();
 }
 
 bool MpdClientWrapper::ClearQueue()
@@ -249,34 +245,28 @@ bool MpdClientWrapper::ChangeVolume(int by)
     return mpd_run_change_volume(connection, by);
 }
 
-std::vector<std::unique_ptr<ImpyD::TitleFormatting::ITagged>> MpdClientWrapper::List(mpd_tag_type mainTag,
-    const std::unique_ptr<std::vector<std::string> > &filters,
-    const std::unique_ptr<std::vector<mpd_tag_type> > &groups)
+std::vector<std::unique_ptr<ImpyD::TitleFormatting::ITagged>> MpdClientWrapper::List(
+    const std::vector<mpd_tag_type> *groups,
+    const std::vector<std::unique_ptr<ImpyD::Mpd::IFilterGenerator>> *filters)
 {
-
-
     ThrowIfNotConnected();
     mpd_search_cancel(connection);
-    mpd_search_db_tags(connection, mainTag);
+
+    assert(!groups->empty());
+    mpd_search_db_tags(connection, groups->back());
 
     if (filters)
     {
         for (auto &expression : *filters)
         {
-            mpd_search_add_expression(connection, expression.c_str());
+            expression->ApplyFilter(connection);
         }
     }
 
-    int groupLen = 0;
-    if (groups)
+    for (int i = groups->size() - 2; i >= 0; i--)
     {
-        groupLen = groups->size();
-        for (int i = groupLen - 1; i >= 0; i--)
-        {
-            const auto &group = groups->at(i);
-            mpd_search_add_group_tag(connection, group);
-        }
-
+        const auto &group = groups->at(i);
+        mpd_search_add_group_tag(connection, group);
     }
 
     mpd_search_commit(connection);
@@ -285,24 +275,13 @@ std::vector<std::unique_ptr<ImpyD::TitleFormatting::ITagged>> MpdClientWrapper::
 
     //TODO: explain what this is for
     std::vector<std::pair<mpd_tag_type, std::string>> tagStack;
-    std::vector<mpd_tag_type> tagTypes;
-
-    //Tags will appear in reverse order of groups with the main tag being last, so we reverse it here.
-    ///*
-    for (int i = 0; i < groupLen; i++)
-    {
-        tagTypes.emplace_back(groups->at(i));
-    }
-    //*/
-
-    tagTypes.emplace_back(mainTag);
 
     auto pair = mpd_recv_pair(connection);
     while (pair != nullptr)
     {
         auto currentType = mpd_tag_name_iparse(pair->name);
 
-        if (tagTypes[tagStack.size()] == currentType)
+        if (groups->at(tagStack.size()) == currentType)
         {
             tagStack.emplace_back(std::pair(currentType, pair->value));
         }
@@ -316,7 +295,7 @@ std::vector<std::unique_ptr<ImpyD::TitleFormatting::ITagged>> MpdClientWrapper::
             tagStack.emplace_back(std::pair(currentType, pair->value));
         }
 
-        if (currentType == tagTypes.back())
+        if (currentType == groups->back())
         {
             const auto item = new ImpyD::Mpd::ArbitraryTagged();
 
@@ -350,15 +329,18 @@ const MpdClientWrapper::MpdStatusPtr &MpdClientWrapper::GetStatus()
     return cache.status;
 }
 
-bool MpdClientWrapper::ReceiveSongList(std::vector<mpd_song *> &songList)
+std::vector<MpdSongWrapper> MpdClientWrapper::ReceiveSongList() const
 {
+    std::vector<MpdSongWrapper> list;
+
     auto curSong = mpd_recv_song(connection);
     while (curSong != nullptr)
     {
-        songList.push_back(curSong);
+        list.emplace_back(curSong);
         curSong = mpd_recv_song(connection);
     }
-    return true;
+
+    return list;
 }
 
 void MpdClientWrapper::Poll()

@@ -4,8 +4,7 @@
 #include <regex>
 
 #include "BuiltinFormatFunctions.hpp"
-
-
+#include "ITagged.hpp"
 
 
 namespace ImpyD::TitleFormatting
@@ -13,7 +12,7 @@ namespace ImpyD::TitleFormatting
     static const std::regex tagRegex = std::regex("%([a-zA-z]+)%", std::regex_constants::optimize | std::regex_constants::ECMAScript);
     static std::vector<std::string> artistTagListArgs = {"artist", ", "};
 
-    static std::optional<std::string> GetSongTag(mpd_song *song, std::string const &tag)
+    static std::string GetTagValue(const ITagged & tagged, const std::string &tag)
     {
         if (tag == "duration")
         {
@@ -26,18 +25,18 @@ namespace ImpyD::TitleFormatting
             return GetInvalidTagErrorMessage(tag);
         }
 
+        //List all artists
         if (tagType == MPD_TAG_ARTIST || tagType == MPD_TAG_ARTIST_SORT)
         {
-            return BuiltIn::TagList(song, artistTagListArgs);
+            return BuiltIn::TagList(tagged, artistTagListArgs);
         }
 
         //Default to first value.
-        auto rawTag =  mpd_song_get_tag(song, tagType, 0);
-        return rawTag == nullptr ? "" : rawTag;
+        return tagged.GetSingleValue(tagType);
     }
 
 
-    std::string FormatSong(mpd_song *song, const std::string &format)
+    std::string FormatITagged(const ITagged &tagged, const std::string &format)
     {
         auto begin = std::sregex_iterator(format.begin(), format.end(), tagRegex);
         auto end = std::sregex_iterator();
@@ -46,15 +45,12 @@ namespace ImpyD::TitleFormatting
         for (auto it = begin; it != end; ++it)
         {
             auto const &match = *it;
-            auto tagValue = GetSongTag(song, match.str(1));
-            if (!tagValue.has_value())
-            {
-                continue;
-            }
-            outStr.replace(match.position() + curOffset, match.length(), tagValue.value());
-            curOffset += tagValue.value().length() - match.length();
+            auto tagValue = GetTagValue(tagged, match.str(1));
+            outStr.replace(match.position() + curOffset, match.length(), tagValue);
+            curOffset += tagValue.length() - match.length();
         }
-        return outStr;
+
+        return std::move(outStr);
     }
 
     static std::string GetErrorString(const std::string &message)
@@ -85,7 +81,7 @@ namespace ImpyD::TitleFormatting
 
         for (auto it = begin; it != end; ++it)
         {
-            tags.insert(mpd_tag_name_iparse(it->str().c_str()));
+            tags.insert(mpd_tag_name_iparse(it->str(1).c_str()));
         }
 
         return std::move(tags);

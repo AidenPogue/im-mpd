@@ -6,7 +6,7 @@
 
 #include "TitleFormatter.hpp"
 
-std::string ImpyD::TitleFormatting::BuiltIn::TagList(const mpd_song *song, std::vector<std::string> &args)
+std::string ImpyD::TitleFormatting::BuiltIn::TagList(const ITagged & tagged, std::vector<std::string> &args)
 {
     auto err = GetTooFewArgumentsErrorMessage(2, args.size());
     if (err) return err.value();
@@ -18,17 +18,17 @@ std::string ImpyD::TitleFormatting::BuiltIn::TagList(const mpd_song *song, std::
     }
 
     auto outString = std::string();
-    size_t idx = 0;
-    const char *value = mpd_song_get_tag(song, tagType, idx);
-    while (value != nullptr)
+    const auto &values = tagged.GetAllValues(tagType);
+
+    for (int i = 0; i < values.size(); ++i)
     {
-        if (idx != 0)
+        if (i != 0)
         {
             outString += args[1];
         }
-        outString += value;
-        value = mpd_song_get_tag(song, tagType, ++idx);
+
+        outString += values[i];
     }
 
-    return outString;
+    return std::move(outString);
 }

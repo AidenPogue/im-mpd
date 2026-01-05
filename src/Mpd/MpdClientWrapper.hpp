@@ -9,7 +9,9 @@
 
 #include "MpdClientCache.hpp"
 #include "MpdIdleEventData.hpp"
+#include "MpdSongWrapper.hpp"
 #include "../TitleFormatting/ITagged.hpp"
+#include "IFilterGenerator.hpp"
 
 class MpdClientWrapper
 {
@@ -43,7 +45,8 @@ private:
     int Connect();
 
     bool ReceiveIdle();
-    bool ReceiveSongList(std::vector<mpd_song *> &songList);
+
+    std::vector<MpdSongWrapper> ReceiveSongList() const;
 
 public:
 
@@ -71,7 +74,8 @@ public:
     [[nodiscard]] mpd_idle GetIdleEventsAndClear();
 
     const MpdSongPtr &GetCurrentSong();
-    bool GetQueue(std::vector<mpd_song *> &songList);
+
+    [[nodiscard]] std::vector<MpdSongWrapper> GetQueue() const;
     bool ClearQueue();
     bool RandomizeQueue();
 
@@ -92,11 +96,9 @@ public:
     bool ChangeVolume(int by);
 
     //Database
-    std::vector<std::unique_ptr<ImpyD::TitleFormatting::ITagged>> List(mpd_tag_type mainTag,
-                                                                       const std::unique_ptr<std::vector<std::string> >
-                                                                       &filters = nullptr,
-                                                                       const std::unique_ptr<std::vector<mpd_tag_type> >
-                                                                       &groups = nullptr);
+    [[nodiscard]] std::vector<std::unique_ptr<ImpyD::TitleFormatting::ITagged>> List(
+        const std::vector<mpd_tag_type> *groups,
+        const std::vector<std::unique_ptr<ImpyD::Mpd::IFilterGenerator>> *filters = nullptr);
 
     void Poll();
 };

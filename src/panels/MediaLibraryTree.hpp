@@ -1,5 +1,6 @@
 #ifndef IM_MPD_MEDIALIBRARYTREE_H
 #define IM_MPD_MEDIALIBRARYTREE_H
+#include "LibraryLayer.hpp"
 #include "PanelBase.hpp"
 #include "../PanelFactory/RegisterPanel.hpp"
 
@@ -13,12 +14,13 @@ namespace ImpyD
         public:
             std::string content;
             std::unique_ptr<TreeItem> parent;
-            std::vector<TreeItem> children;
+            std::unique_ptr<std::vector<TreeItem>> children;
+            const LibraryLayer &layer;
         };
 
         std::vector<TreeItem> rootItems;
 
-        void FetchRootItems(MpdClientWrapper &client);
+        void FetchChildren(MpdClientWrapper &client, TreeItem &item);
 
     public:
         IMPYD_REGISTER_PANEL_FactoryFunc(MediaLibraryTree);

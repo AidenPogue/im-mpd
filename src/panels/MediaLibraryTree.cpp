@@ -1,30 +1,35 @@
-//
-// Created by aiden on 2025-12-08.
-//
-
 #include "MediaLibraryTree.hpp"
 
 #include "LibraryLayer.hpp"
+#include "../TitleFormatting/TitleFormatter.hpp"
 
 namespace ImpyD {
-    void MediaLibraryTree::FetchRootItems(MpdClientWrapper &client)
+    void MediaLibraryTree::FetchChildren(MpdClientWrapper &client, TreeItem &item)
     {
-        rootItems.clear();
+        if (!item.children)
+        {
+            item.children = std::make_unique<std::vector<TreeItem>>();
+        }
+        item.children->clear();
         //Testing layers!
 
-        std::vector<LibraryLayer> layers =
-            {
-            LibraryLayer("%albumartist%", ""),
-            LibraryLayer("%album% (%date%)", "%date% %album%"),
-            LibraryLayer("%disc%.%track% - %title%", ""),
-        };
+        // std::vector<LibraryLayer> layers =
+        //     {
+        //     LibraryLayer("%albumartist%", ""),
+        //     LibraryLayer("%album% (%date%)", "%date% %album%"),
+        //     LibraryLayer("%disc%.%track% - %title%", ""),
+        // };
+
+        auto rootTags = TitleFormatting::GetUsedTags(layers.front().displayFormat);
+        auto rootTagsVec = std::vector<mpd_tag_type>(rootTags.begin(), rootTags.end());
 
         client.BeginNoIdle();
-        auto rootList = client.List(MPD_TAG_ALBUM_ARTIST);
+        auto rootList = client.List(&rootTagsVec);
         client.EndNoIdle();
+
         for (const auto &item : rootList)
         {
-            rootItems.push_back(TreeItem(item->GetSingleValue(MPD_TAG_ALBUM_ARTIST), nullptr, {}));
+            item.push_back(TreeItem(TitleFormatting::FormatITagged(*item, layers.front().displayFormat), nullptr, nullptr));
         }
     }
 
@@ -40,7 +45,7 @@ namespace ImpyD {
             const auto &rootItem = rootItems[i];
 
             ImGui::PushID(i);
-            if (ImGui::TreeNode(rootItem.content.c_str()))
+            if (ImGui::TreeNodeEx(rootItem.content.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
             {
                 ImGui::TreePop();
             }
@@ -53,12 +58,12 @@ namespace ImpyD {
     {
         if (event & MPD_IDLE_DATABASE)
         {
-            FetchRootItems(client);
+            FetchChildren(client, TODO);
         }
     }
 
     void MediaLibraryTree::InitState(MpdClientWrapper &client)
     {
-        FetchRootItems(client);
+        FetchChildren(client, TODO);
     }
 } // ImMPD

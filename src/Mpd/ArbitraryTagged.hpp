@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <mpd/tag.h>
 
+#include "TagFilterGenerator.hpp"
 #include "../TitleFormatting/ITagged.hpp"
 
 namespace ImpyD::Mpd
@@ -18,9 +19,11 @@ namespace ImpyD::Mpd
 
         void AddValue(mpd_tag_type key, std::string value);
 
-        const std::string &GetSingleValue(mpd_tag_type key) const override;
+        std::string GetSingleValue(mpd_tag_type key) const override;
 
-        const std::vector<std::string> &GetAllValues(mpd_tag_type key) const override;
+        std::vector<std::string> GetAllValues(mpd_tag_type key) const override;
+
+        std::vector<TagFilterGenerator> GetFilters() const;
     };
 }
 
